@@ -345,26 +345,33 @@ function renderClientes() {
   cont.innerHTML = Object.entries(grouped).map(function(entry){
     const nombre=entry[0], proyectos=entry[1];
     const sections = proyectos.map(function(p){
-      const pagos = [];
-      if (p.tipo==='mensualidad') {
-        pagos.push({label:'Mensualidad',monto:p.pago1,estado:p.estado1});
-      } else {
-        if(p.pago1) pagos.push({label:'Primer pago',monto:p.pago1,estado:p.estado1});
-        if(p.pago2) pagos.push({label:'Segundo pago',monto:p.pago2,estado:p.estado2});
-        if(p.pago3) pagos.push({label:'Tercer pago',monto:p.pago3,estado:p.estado3});
-        if(!pagos.length) pagos.push({label:'Pago único',monto:0,estado:p.estado1});
+      // Siempre mostrar tres momentos, con guión si no aplica
+      var p1 = p.pago1||0, p2 = p.pago2||0, p3 = p.pago3||0;
+      var e1 = p.estado1||'pendiente', e2 = p.estado2||'pendiente', e3 = p.estado3||'pendiente';
+      var esUnico = p.tipo==='mensualidad' || (!p2 && !p3);
+      var totalAcordado = (p1||0)+(p2||0)+(p3||0);
+      var totalCobrado = (e1==='cobrado'?p1:0)+(e2==='cobrado'?p2:0)+(e3==='cobrado'?p3:0);
+      var estadoGeneral = p.estado||'activo';
+
+      function pagoRow(label, monto, estado, aplica) {
+        var montoStr = aplica && monto ? fmt(monto) : '—';
+        var estadoEl = aplica && monto
+          ? '<span class="'+(estado==='cobrado'?'s-cob':'s-pend')+'">'+(estado==='cobrado'?'cobrado':'pendiente')+'</span>'
+          : '<span style="color:#ccc">—</span>';
+        return '<tr><td>'+label+'</td><td>'+montoStr+'</td><td>'+estadoEl+'</td></tr>';
       }
-      const totalAcordado = pagos.reduce(function(s,pg){return s+Number(pg.monto||0);},0);
-      const totalCobrado = pagos.filter(function(pg){return pg.estado==='cobrado';}).reduce(function(s,pg){return s+Number(pg.monto||0);},0);
-      const pagoRows = pagos.map(function(pg){
-        const isCob = pg.estado==='cobrado';
-        return '<tr><td>'+pg.label+'</td><td>'+(pg.monto?fmt(pg.monto):'—')+'</td><td><span class="'+(isCob?'s-cob':'s-pend')+'">'+(isCob?'cobrado':'pendiente')+'</span></td></tr>';
-      }).join('');
+
+      var r1 = pagoRow('Primer pago', p1, e1, !esUnico && p1>0);
+      var r2 = pagoRow('Segundo pago', p2, e2, !esUnico && p2>0);
+      var r3 = pagoRow('Tercer pago', p3, e3, !esUnico && p3>0);
+      var rEstado = '<tr style="background:#fafaf8"><td colspan="2" style="font-size:11px;color:var(--muted)">Estado general'+(totalAcordado>0?' · '+fmt(totalCobrado)+' de '+fmt(totalAcordado):'')+'</td><td><span class="'+(estadoGeneral==='cobrado'?'s-cob':estadoGeneral==='presupuestado'?'':'s-pend')+'">'+estadoGeneral+'</span></td></tr>';
+
       return '<div class="proj-section">'+
         '<div class="proj-title">'+p.descripcion+'</div>'+
-        '<div class="proj-meta">'+p.tipo+(p.mes?' · '+p.mes:'')+(totalAcordado>0?' · '+fmt(totalCobrado)+' de '+fmt(totalAcordado):'')+'</div>'+
-        '<table class="pagos-table"><thead><tr><th>Momento</th><th>Monto</th><th>Estado</th></tr></thead><tbody>'+pagoRows+'</tbody></table>'+
-        '</div>';
+        '<div class="proj-meta">'+p.tipo+(p.mes?' · '+p.mes:'')+'</div>'+
+        '<table class="pagos-table"><thead><tr><th>Momento</th><th>Monto</th><th>Estado</th></tr></thead><tbody>'+
+        r1+r2+r3+rEstado+
+        '</tbody></table></div>';
     }).join('');
     return '<div class="client-card">'+
       '<div class="client-head"><div class="client-avatar">'+nombre.charAt(0).toUpperCase()+'</div><div class="client-name">'+nombre+'</div></div>'+
