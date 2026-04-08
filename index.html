@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanzas — Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --border: #e8e6e0;
+  --text: #1a1a1a;
+  --text-dim: #888;
+  --green: #1a7a4a;
+  --green-bg: #e8f5ee;
+  --red: #c0392b;
+  --red-bg: #fdecea;
+  --amber: #9a6000;
+  --amber-bg: #fef6e4;
+  --blue: #1a5fa8;
+  --blue-bg: #e8f0fb;
+}
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-size: 15px; font-weight: 600; letter-spacing: -0.02em; }
+.logo span { color: var(--green); }
+.updated { font-size: 11px; color: var(--text-dim); font-family: 'DM Mono', monospace; }
+.container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+.month-selector { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+.month-btn { font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dim); cursor: pointer; transition: all 0.15s; }
+.month-btn.active { background: var(--text); color: #fff; border-color: var(--text); }
+.month-btn:hover:not(.active) { border-color: var(--text); color: var(--text); }
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+.metric { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.metric-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
+.metric-val { font-size: 24px; font-weight: 600; letter-spacing: -0.03em; font-family: 'DM Mono', monospace; }
+.metric-val.green { color: var(--green); }
+.metric-val.red { color: var(--red); }
+.metric-val.amber { color: var(--amber); }
+.metric-val.blue { color: var(--blue); }
+.metric-sub { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.card-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: 13px; font-weight: 500; }
+.card-body { padding: 0; }
+.table-row { display: grid; padding: 10px 20px; border-bottom: 1px solid var(--border); font-size: 12px; align-items: center; gap: 8px; }
+.table-row:last-child { border-bottom: none; }
+.table-row.header { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; background: #fafaf8; }
+.mov-row { grid-template-columns: 80px 1fr 100px 90px; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 500; }
+.b-ingreso { background: var(--green-bg); color: var(--green); }
+.b-gasto { background: var(--red-bg); color: var(--red); }
+.b-ahorro { background: var(--amber-bg); color: var(--amber); }
+.monto { font-family: 'DM Mono', monospace; font-size: 12px; }
+.monto.pos { color: var(--green); }
+.monto.neg { color: var(--red); }
+.monto.sav { color: var(--amber); }
+.cat-row { grid-template-columns: 1fr 100px 80px; }
+.bar-wrap { height: 4px; background: var(--border); border-radius: 2px; margin-top: 4px; }
+.bar-fill { height: 4px; background: var(--red); border-radius: 2px; transition: width 0.4s; }
+.empty { padding: 32px 20px; text-align: center; font-size: 13px; color: var(--text-dim); }
+.loading { padding: 32px 20px; text-align: center; font-size: 13px; color: var(--text-dim); }
+.progress-ring { display: flex; align-items: center; gap: 16px; padding: 20px; }
+.ring-wrap { position: relative; flex-shrink: 0; }
+svg.ring { transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--border); stroke-width: 6; }
+.ring-fill { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s; }
+.ring-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; font-family: 'DM Mono', monospace; }
+.ring-info { flex: 1; }
+.ring-title { font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+.ring-sub { font-size: 12px; color: var(--text-dim); }
+@media (max-width: 768px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .grid2 { grid-template-columns: 1fr; }
+  header { padding: 12px 16px; }
+  .container { padding: 16px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">finanzas<span>.</span>personal</div>
+  <div class="updated" id="updatedAt">cargando...</div>
+</header>
+
+<div class="container">
+  <div class="month-selector" id="monthSelector"></div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Ingresos</div>
+      <div class="metric-val green" id="mIngreso">$0</div>
+      <div class="metric-sub" id="mIngresoSub">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Gastos</div>
+      <div class="metric-val red" id="mGasto">$0</div>
+      <div class="metric-sub" id="mGastoSub">—</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Balance</div>
+      <div class="metric-val blue" id="mBalance">$0</div>
+      <div class="metric-sub">ingresos − gastos</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">USD ahorrado</div>
+      <div class="metric-val amber" id="mUSD">U$S 0</div>
+      <div class="metric-sub" id="mUSDSub">objetivo: 20%</div>
+    </div>
+  </div>
+
+  <div style="margin-bottom: 16px;">
+    <div class="card">
+      <div class="progress-ring" id="savingsRing">
+        <div class="ring-wrap">
+          <svg class="ring" width="72" height="72" viewBox="0 0 72 72">
+            <circle class="ring-bg" cx="36" cy="36" r="30"/>
+            <circle class="ring-fill" id="ringFill" cx="36" cy="36" r="30" stroke="#1a7a4a" stroke-dasharray="188.5" stroke-dashoffset="188.5"/>
+          </svg>
+          <div class="ring-label" id="ringPct">0%</div>
+        </div>
+        <div class="ring-info">
+          <div class="ring-title">Ahorro del mes</div>
+          <div class="ring-sub" id="ringSub">Gastaste $0 de $0 disponibles</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Últimos movimientos</div>
+      </div>
+      <div class="card-body">
+        <div class="table-row mov-row header">
+          <span>Fecha</span><span>Descripción</span><span>Categoría</span><span style="text-align:right">Monto</span>
+        </div>
+        <div id="movTable"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">Gastos por categoría</div>
+      </div>
+      <div class="card-body">
+        <div class="table-row cat-row header">
+          <span>Categoría</span><span style="text-align:right">Total</span><span style="text-align:right">%</span>
+        </div>
+        <div id="catTable"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '1D-QOpHETr7NKs2Gqx8MkTwwQCwS6MxeiR0YJlgCJ7OY';
+const MESES = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+let allData = {};
+let currentMonth = MESES[new Date().getMonth()];
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString('es-AR'); }
+
+async function fetchSheet(sheetName) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(sheetName)}`;
+  const res = await fetch(url);
+  const text = await res.text();
+  const json = JSON.parse(text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/)[1]);
+  if (!json.table || !json.table.rows) return [];
+  const cols = json.table.cols.map(c => c.label);
+  return json.table.rows.map(row => {
+    const obj = {};
+    row.c.forEach((cell, i) => { obj[cols[i]] = cell ? cell.v : ''; });
+    return obj;
+  });
+}
+
+async function loadData() {
+  try {
+    const resumen = await fetchSheet('Resumen');
+    const mesesDisponibles = [...new Set(resumen.map(r => r['Mes']).filter(Boolean))];
+
+    // Selector de meses
+    const sel = document.getElementById('monthSelector');
+    sel.innerHTML = '';
+    mesesDisponibles.forEach(mes => {
+      const btn = document.createElement('button');
+      btn.className = 'month-btn' + (mes === currentMonth ? ' active' : '');
+      btn.textContent = mes;
+      btn.addEventListener('click', () => { currentMonth = mes; renderMonth(mes); document.querySelectorAll('.month-btn').forEach(b => b.classList.toggle('active', b.textContent === mes)); });
+      sel.appendChild(btn);
+    });
+
+    // Cargar datos del mes actual
+    for (const mes of mesesDisponibles) {
+      const rows = await fetchSheet(mes);
+      allData[mes] = rows;
+    }
+
+    document.getElementById('updatedAt').textContent = 'actualizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+    renderMonth(currentMonth);
+  } catch(e) {
+    document.getElementById('movTable').innerHTML = '<div class="empty">Error al cargar datos. Verificá que el Sheet sea público.</div>';
+  }
+}
+
+function renderMonth(mes) {
+  const resData = allData[mes] || [];
+  if (!resData.length) { renderEmpty(); return; }
+
+  let ing = 0, gas = 0, usd = 0;
+  resData.forEach(r => {
+    if (r['Tipo'] === 'ingreso') ing += Number(r['Monto ARS']) || 0;
+    else if (r['Tipo'] === 'gasto') gas += Number(r['Monto ARS']) || 0;
+    else if (r['Tipo'] === 'ahorro') usd += Number(r['Monto USD']) || 0;
+  });
+
+  const balance = ing - gas;
+  const objAhorro = ing * 0.2;
+  const pctGasto = ing > 0 ? Math.min(100, Math.round(gas / ing * 100)) : 0;
+  const pctAhorro = objAhorro > 0 ? Math.min(100, Math.round((ing - gas) / objAhorro * 100)) : 0;
+
+  document.getElementById('mIngreso').textContent = fmt(ing);
+  document.getElementById('mGasto').textContent = fmt(gas);
+  document.getElementById('mBalance').textContent = fmt(balance);
+  document.getElementById('mBalance').className = 'metric-val ' + (balance >= 0 ? 'green' : 'red');
+  document.getElementById('mUSD').textContent = 'U$S ' + usd;
+  document.getElementById('mIngresoSub').textContent = mes;
+  document.getElementById('mGastoSub').textContent = pctGasto + '% de ingresos';
+
+  // Ring
+  const circumference = 188.5;
+  const offset = circumference - (pctAhorro / 100 * circumference);
+  document.getElementById('ringFill').style.strokeDashoffset = offset;
+  document.getElementById('ringFill').style.stroke = pctAhorro >= 100 ? '#1a7a4a' : pctAhorro >= 50 ? '#9a6000' : '#c0392b';
+  document.getElementById('ringPct').textContent = pctAhorro + '%';
+  document.getElementById('ringSub').textContent = 'Gastaste ' + fmt(gas) + ' de ' + fmt(ing) + ' disponibles';
+
+  // Movimientos
+  const movs = resData.slice().reverse().slice(0, 20);
+  if (!movs.length) {
+    document.getElementById('movTable').innerHTML = '<div class="empty">Sin movimientos este mes.</div>';
+  } else {
+    document.getElementById('movTable').innerHTML = movs.map(m => {
+      const tipo = m['Tipo'] || '';
+      const bc = tipo === 'ingreso' ? 'b-ingreso' : tipo === 'ahorro' ? 'b-ahorro' : 'b-gasto';
+      const mc = tipo === 'ingreso' ? 'pos' : tipo === 'ahorro' ? 'sav' : 'neg';
+      const monto = m['Moneda'] === 'USD' ? 'U$S ' + m['Monto USD'] : fmt(Number(m['Monto ARS']) || 0);
+      return `<div class="table-row mov-row">
+        <span style="color:var(--text-dim);font-size:11px">${m['Fecha'] || ''}</span>
+        <span>${m['Descripción'] || ''}</span>
+        <span><span class="badge ${bc}">${tipo}</span></span>
+        <span class="monto ${mc}" style="text-align:right">${monto}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // Categorías
+  const cats = {};
+  resData.filter(r => r['Tipo'] === 'gasto').forEach(r => {
+    const cat = r['Categoría'] || 'Otros';
+    cats[cat] = (cats[cat] || 0) + (Number(r['Monto ARS']) || 0);
+  });
+  const sorted = Object.entries(cats).sort((a,b) => b[1]-a[1]);
+  const maxCat = sorted[0] ? sorted[0][1] : 1;
+  if (!sorted.length) {
+    document.getElementById('catTable').innerHTML = '<div class="empty">Sin gastos este mes.</div>';
+  } else {
+    document.getElementById('catTable').innerHTML = sorted.map(([cat, total]) => {
+      const pct = Math.round(total / gas * 100);
+      const barPct = Math.round(total / maxCat * 100);
+      return `<div class="table-row cat-row">
+        <div><div>${cat}</div><div class="bar-wrap"><div class="bar-fill" style="width:${barPct}%"></div></div></div>
+        <div class="monto neg" style="text-align:right">${fmt(total)}</div>
+        <div style="text-align:right;color:var(--text-dim);font-size:11px">${pct}%</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function renderEmpty() {
+  ['movTable','catTable'].forEach(id => document.getElementById(id).innerHTML = '<div class="empty">Sin datos para este mes.</div>');
+}
+
+loadData();
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>
